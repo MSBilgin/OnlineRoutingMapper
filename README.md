@@ -26,7 +26,7 @@ You dont need any data to calculate routes for your maps. Just point the start a
    
  
 ###Changelog
--MapBox, MapQuest, TomTom, GraphHopper, OSRM service API's added
+   - MapBox, MapQuest, TomTom, GraphHopper, OSRM service API's added
 	
 
 <p class="western"><br><br>
