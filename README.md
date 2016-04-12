@@ -1,4 +1,4 @@
-Online Routing Mapper v0.7
+Online Routing Mapper v0.8
 ==========
 
 
@@ -25,7 +25,8 @@ You dont need any data to calculate routes for your maps. Just point the start a
    - No need extra python packages.
    
  
-
+###Changelog
+-MapBox, MapQuest, TomTom, GraphHopper, OSRM service API's added
 	
 
 <p class="western"><br><br>
