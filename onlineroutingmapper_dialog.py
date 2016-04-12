@@ -5,11 +5,10 @@
                                  A QGIS plugin
  Generate routes by using online services (Google Directions etc.)
                              -------------------
-        begin                : 2015-10
-        git sha              : $Format:%H$
+
         copyright            : (C) 2015 by Mehmet Selim BILGIN
-        email                : mselimbilgin.yahoo.com
-        web					 : http://cbsuygulama.wordpress.com		
+        email                : mselimbilgin@yahoo.com
+        web                  : cbsuygulama.wordpress.com
  ***************************************************************************/
 
 /***************************************************************************

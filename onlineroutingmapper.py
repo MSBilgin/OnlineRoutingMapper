@@ -5,11 +5,10 @@
                                  A QGIS plugin
  Generate routes by using online services (Google Directions etc.)
                               -------------------
-        begin                : 2015-10
-        git sha              : $Format:%H$
+
         copyright            : (C) 2015 by Mehmet Selim BILGIN
         email                : mselimbilgin@yahoo.com
-        web					 : http://cbsuygulama.wordpress.com		
+        web                  : cbsuygulama.wordpress.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -25,19 +24,18 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+from routeprovider import RouteProvider
 
-from qgis.gui import *
+from qgis.gui import QgsMapToolEmitPoint
 from qgis.core import *
 
 import resources
 
 from onlineroutingmapper_dialog import OnlineRoutingMapperDialog
 
-import os, urllib2, json, datetime
-from xml.dom import minidom
+import os,urllib2
 
-
-class OnlineRoutingMapper:
+class OnlineRoutingMapper(object):
     def __init__(self, iface):
         self.iface = iface
         # initialize plugin directory
@@ -97,121 +95,38 @@ class OnlineRoutingMapper:
             callback=self.run,
             parent=self.iface.mainWindow())
 
-    def clickHandler(self, point):
-        whichTextBox.setText(str(point.x()) + ',' +str(point.y()))
+    def clickHandler(self, QgsPoint):
+        whichTextBox.setText(str(QgsPoint.x()) + ',' +str(QgsPoint.y()))
         self.dlg.showNormal()
         self.canvas.unsetMapTool(self.clickTool) #I dont need it no more. Let it free
 
-    def toolIActivator(self, txtbox):
+    def toolActivator(self, QLineEdit):
         self.dlg.showMinimized()
         global whichTextBox
-        whichTextBox = txtbox #I find this way to control it
-        self.clickTool.canvasClicked.connect(self.clickHandler) #sending signals to the function
+        whichTextBox = QLineEdit #I find this way to control it
+        self.clickTool.canvasClicked.connect(self.clickHandler)
         self.canvas.setMapTool(self.clickTool) #clickTool is activated
 
-    def crsTransform(self, inputPointStr, startOrstop):
+    def crsTransform(self, inputPointStr):
         sourceCRS = self.canvas.mapSettings().destinationCrs() #getting the project CRS
         destinationCRS = QgsCoordinateReferenceSystem(4326) #google uses this CRS
         transformer = QgsCoordinateTransform(sourceCRS,destinationCRS) #defining a CRS transformer
         inputQgsPoint = QgsPoint(float(inputPointStr.split(',')[0]), float(inputPointStr.split(',')[1]))
         outputQgsPoint = transformer.transform(inputQgsPoint)
 
-        if startOrstop == 1:
-            self.startPoint = str(outputQgsPoint.y()) + ',' + str(outputQgsPoint.x())
-        else:
-            self.stopPoint = str(outputQgsPoint.y()) + ',' + str(outputQgsPoint.x())
-        # QMessageBox.information(None,'1', inputQgsPoint.toString() + '---' + lonlatpoint)
+        return str(outputQgsPoint.y()) + ',' + str(outputQgsPoint.x())
 
     def checkNetConnection(self):
         try:
-            urllib2.urlopen('http://www.google.com',timeout=3)
+            urllib2.urlopen('http://www.google.com',timeout=7)
             return True
         except urllib2.URLError as err:
             pass
         return False
 
-    def getData(self, origin, destination):
-        url =''
-        dataType = ''
-        if self.dlg.serviceCombo.currentText() == 'Google Direction API':
-            url = 'https://maps.googleapis.com/maps/api/directions/json?origin=' + origin + '&destination=' + destination + '&mode=driving'
-            dataType = 'json'
-        elif self.dlg.serviceCombo.currentText() == 'HERE Routing API':
-            now = datetime.datetime.now()
-            departureParameter = str(now.year)+'-'+str('%02d' % now.month) +'-'+ str('%02d' % now.day)+'T'+str('%02d' % now.hour)+':'+str('%02d' % now.minute)+':'+str('%02d' % now.second)
-            url = 'https://route.api.here.com/routing/7.2/calculateroute.json?alternatives=0&app_code=djPZyynKsbTjIUDOBcHZ2g&app_id=xWVIueSv6JL0aJ5xqTxb&departure=' + departureParameter + '&jsonAttributes=41&language=en_US&legattributes=all&linkattributes=none,sh,ds,rn,ro,nl,pt,ns,le&maneuverattributes=all&metricSystem=imperial&mode=fastest;car;traffic:enabled;&routeattributes=none,sh,wp,sm,bb,lg,no,li,tx&transportModeType=car&waypoint0=geo!' + origin + '&waypoint1=geo!' + destination
-            dataType = 'json'
-        elif self.dlg.serviceCombo.currentText() == 'YourNavigation API':
-            url = 'http://www.yournavigation.org/api/dev/route.php?flat=' +  origin.split(',')[0] + '&flon=' + origin.split(',')[1] + '&tlat=' + destination.split(',')[0] + '&tlon=' + destination.split(',')[1] + '&v=motorcar&fast=0&layer=mapnik&instructions=0'
-            dataType = 'xml'
-
-        try:
-             response = urllib2.urlopen(url)
-             if dataType == 'json':
-                 return json.loads(response.read())
-             elif dataType == 'xml':
-                 return minidom.parseString(response.read())
-        except Exception as err:
-            QMessageBox.warning(None, 'Error!', err.msg)
-            return False
-
-    def coorOrganizer(self, input):
-        #Coordinates in [1.2, 5.7, 6.8, 9.1] style is converted to LineString (LineString(1.2 5.7, 6.8 9.1)) style by this function.
-        coorPair = [input[i:i + 2] for i in range(0, len(input), 2)]
-        usefulPoly = []
-        for i in coorPair:
-            usefulPoly.append(" ".join(map(str, i)))
-        wkt = 'LineString(' + ','.join(usefulPoly) +')'
-        return wkt
-
-    def routeMaker(self, responseData):
-        wktPolyline = '' #the object that inserted into the line feature
-
-        if self.dlg.serviceCombo.currentText() == 'Google Direction API':
-            polylines = []
-            steps = responseData['routes'][0]['legs'][0]['steps']
-            for i in steps:
-                polylines.append(self.gPolyDecode(str(i['polyline']['points'])))
-
-        #A polyline includes several lines. Every line has start and stop point.
-        #First line's stop point is second line's start point. So this causes duplication.
-        #In here I clear them except first line.
-            for i in polylines[1:]:
-                i.pop(0)
-
-            usefulCoorList = []
-            for i in polylines:
-                for j in i:
-                    usefulCoorList.extend(j)
-
-            wktPolyline = self.coorOrganizer(usefulCoorList)
-            # wktPolyline = 'LineString('
-            #
-            # for i in usefulPoly:
-            #         wktPolyline += ' '.join(map(str, i)) + ','
-            # wktPolyline = wktPolyline[:-1] + ')'
-
-        elif self.dlg.serviceCombo.currentText() == 'HERE Routing API':
-            #HERE API's response coordinates are reverse so this problem is handled in here.
-            coors = responseData['response']['route'][0]['shape']
-            coorPair = [coors[i:i + 2] for i in range(0, len(coors), 2)]
-            usefulCoorList = []
-            for i in coorPair:
-                i.reverse()
-                usefulCoorList.extend(i)
-            wktPolyline = self.coorOrganizer(usefulCoorList)
-
-        elif self.dlg.serviceCombo.currentText() == 'YourNavigation API':
-            coors = responseData.getElementsByTagName('coordinates')[0].firstChild.nodeValue.strip()
-            commaCoors = coors.replace('\n',',')
-            usefulCoorList = []
-            for i in commaCoors.split(','):
-                usefulCoorList.append(float(i))
-
-            wktPolyline = self.coorOrganizer(usefulCoorList)
-
+    def routeMaker(self, wktLineString):
         feature = QgsFeature()
-        feature.setGeometry(QgsGeometry.fromWkt(wktPolyline))
+        feature.setGeometry(QgsGeometry.fromWkt(wktLineString))
         vectorLayer = QgsVectorLayer('LineString?crs=epsg:4326', 'Routing Result', 'memory')
         layerProvider = vectorLayer.dataProvider()
         vectorLayer.startEditing()
@@ -220,91 +135,114 @@ class OnlineRoutingMapper:
         vectorLayer.updateExtents()
         vectorLayer.loadNamedStyle(self.plugin_dir + os.sep + 'OnlineRoutingMapper.qml')
         QgsMapLayerRegistry.instance().addMapLayer(vectorLayer)
-        QMessageBox.information(None, 'Information' ,'The analysis result was added to the canvas.')
         destinationCRS = self.canvas.mapSettings().destinationCrs() #getting the project CRS
         sourceCRS = QgsCoordinateReferenceSystem(4326)
         transformer = QgsCoordinateTransform(sourceCRS,destinationCRS)
         extentForZoom = transformer.transform(vectorLayer.extent())
         self.canvas.setExtent(extentForZoom)
         self.canvas.zoomScale(self.canvas.scale()*1.03) #zoom out a little bit.
+        QMessageBox.information(self.dlg, 'Information' ,'The analysis result was added to the canvas.')
 
-    #Google's encoded polyline decoder algorithm. Inspired by MapBox polyline.js JavaScript library.
-    def gPolyDecode(self, encodedPolyline):
-        index = 0
-        lat = 0
-        lng = 0
-        coordinates = []
-        factor = 1e5
-
-        while index < len(encodedPolyline):
-            shift = 0
-            result = 0
-
-            while True:
-                byte = ord(encodedPolyline[index]) -63
-                result = result | ((byte & 0x1f) << shift)
-                shift += 5
-                index += 1
-                if not (byte >= 0x20):
-                    break
-
-            if (result & 1):
-                latitude_change = ~(result >> 1)
-            else:
-                latitude_change = result >> 1
-
-            shift = result = 0 #resetting variables
-
-            while True:
-                byte = ord(encodedPolyline[index]) -63
-                result = result | ((byte & 0x1f) << shift)
-                shift += 5
-                index += 1
-                if not (byte >= 0x20):
-                    break
-
-            if (result & 1):
-                longitude_change = ~(result >> 1)
-            else:
-                longitude_change = result >> 1
-
-            lat += float(latitude_change)
-            lng += float(longitude_change)
-
-            coordinates.append([lng/factor, lat/factor])
-
-        return coordinates
 
     def runAnalysis(self):
         if len(self.dlg.startTxt.text())>0 and len(self.dlg.stopTxt.text())>0:
             if self.checkNetConnection():
-                resultData = self.getData(self.startPoint,self.stopPoint) #getting service result
-                if self.dlg.serviceCombo.currentText() == 'Google Direction API':
-                    if resultData['status'] == 'OK':
-                        self.routeMaker(resultData)
-                    elif resultData['status'] == 'ZERO_RESULTS':
-                        QMessageBox.warning(None,'Analysis Error',"Cannot calculate the route between the start and stop locations that you entered. Plesase use other Service APIs.")
-                    elif resultData['status'] == 'OVER_QUERY_LIMIT':
-                        QMessageBox.information(None,'Blocked by Google', 'Please re-run the analysis to get result.')
+                startPoint = self.crsTransform(self.dlg.startTxt.text())
+                stopPoint = self.crsTransform(self.dlg.stopTxt.text())
 
-                elif self.dlg.serviceCombo.currentText() == 'HERE Routing API':
+                if self.dlg.serviceCombo.currentIndex() == 0: #google
                     try:
-                        self.routeMaker(resultData)
-                    except:
-                        QMessageBox.warning(None,'Analysis Error',"Cannot calculate the route between the start and stop locations that you entered. Plesase use other Service APIs.")
+                        wkt,url = self.routeEngine.google(startPoint,stopPoint)
+                        # these comment lines maybe useful for debugging.
+                        # QgsMessageLog.logMessage(url)
+                        # QgsMessageLog.logMessage(wkt)
+                        self.routeMaker(wkt)
+                    except Exception as err:
+                        QgsMessageLog.logMessage(str(err))
+                        QMessageBox.warning(self.dlg,'Analysis Error',
+                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
 
-                elif self.dlg.serviceCombo.currentText() == 'YourNavigation API':
-                    coors = resultData.getElementsByTagName('coordinates')[0].firstChild.nodeValue.strip()
+                elif self.dlg.serviceCombo.currentIndex() == 1: #here
+                    try:
+                        wkt,url = self.routeEngine.here(startPoint,stopPoint)
+                        # QgsMessageLog.logMessage(url)
+                        # QgsMessageLog.logMessage(wkt)
+                        self.routeMaker(wkt)
+                    except Exception as err:
+                        QgsMessageLog.logMessage(str(err))
+                        QMessageBox.warning(self.dlg,'Analysis Error',
+                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
 
-                    if coors == '':
-                        QMessageBox.warning(None,'Analysis Error',"Cannot calculate the route between the start and stop locations that you entered. Plesase use other Service APIs.")
-                    else:
-                        self.routeMaker(resultData)
+                elif self.dlg.serviceCombo.currentIndex() == 2: #yourNavigation
+                    try:
+                        wkt,url = self.routeEngine.yourNavigation(startPoint,stopPoint)
+                        # QgsMessageLog.logMessage(url)
+                        # QgsMessageLog.logMessage(wkt)
+                        self.routeMaker(wkt)
+                    except Exception as err:
+                        QgsMessageLog.logMessage(str(err))
+                        QMessageBox.warning(self.dlg,'Analysis Error',
+                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
+
+                elif self.dlg.serviceCombo.currentIndex() == 3: #mapbox
+                    try:
+                        wkt,url = self.routeEngine.mapBox(startPoint,stopPoint)
+                        # QgsMessageLog.logMessage(url)
+                        # QgsMessageLog.logMessage(wkt)
+                        self.routeMaker(wkt)
+                    except Exception as err:
+                        QgsMessageLog.logMessage(str(err))
+                        QMessageBox.warning(self.dlg,'Analysis Error',
+                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
+
+                elif self.dlg.serviceCombo.currentIndex() == 4: #grapHopper
+                    try:
+                        wkt,url = self.routeEngine.graphHopper(startPoint,stopPoint)
+                        # QgsMessageLog.logMessage(url)
+                        # QgsMessageLog.logMessage(wkt)
+                        self.routeMaker(wkt)
+                    except Exception as err:
+                        QgsMessageLog.logMessage(str(err))
+                        QMessageBox.warning(self.dlg,'Analysis Error',
+                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
+
+                elif self.dlg.serviceCombo.currentIndex() == 5: #tomtom
+                    try:
+                        wkt,url = self.routeEngine.tomtom(startPoint,stopPoint)
+                        # QgsMessageLog.logMessage(url)
+                        # QgsMessageLog.logMessage(wkt)
+                        self.routeMaker(wkt)
+                    except Exception as err:
+                        QgsMessageLog.logMessage(str(err))
+                        QMessageBox.warning(self.dlg,'Analysis Error',
+                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
+
+                elif self.dlg.serviceCombo.currentIndex() == 6: #mapQuest
+                    try:
+                        wkt, url = self.routeEngine.mapQuest(startPoint, stopPoint)
+                        # QgsMessageLog.logMessage(url)
+                        # QgsMessageLog.logMessage(wkt)
+                        self.routeMaker(wkt)
+                    except Exception as err:
+                        QgsMessageLog.logMessage(str(err))
+                        QMessageBox.warning(self.dlg, 'Analysis Error',
+                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
+
+                elif self.dlg.serviceCombo.currentIndex() == 7: #mapQuest
+                    try:
+                        wkt, url = self.routeEngine.osrm(startPoint, stopPoint)
+                        # QgsMessageLog.logMessage(url)
+                        # QgsMessageLog.logMessage(wkt)
+                        self.routeMaker(wkt)
+                    except Exception as err:
+                        QgsMessageLog.logMessage(str(err))
+                        QMessageBox.warning(self.dlg, 'Analysis Error',
+                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
 
             else:
-                QMessageBox.warning(None, 'Network Error!', 'There is no internet connection.')
+                QMessageBox.warning(self.dlg, 'Network Error!', 'There is no internet connection.')
         else:
-            QMessageBox.information(None,'Warning', 'Please choose Start Location and Stop Location.')
+            QMessageBox.information(self.dlg,'Warning', 'Please choose Start Location and Stop Location.')
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -317,19 +255,13 @@ class OnlineRoutingMapper:
         del self.toolbar
 
     def run(self):
-
+        self.routeEngine = RouteProvider()
         self.canvas = self.iface.mapCanvas()
         self.dlg = OnlineRoutingMapperDialog()
+        self.dlg.setFixedSize(self.dlg.size())
         self.clickTool = QgsMapToolEmitPoint(self.canvas) #clicktool instance generated in here.
-        self.dlg.startBtn.clicked.connect(lambda : self.toolIActivator(self.dlg.startTxt))
-        self.dlg.stopBtn.clicked.connect(lambda : self.toolIActivator(self.dlg.stopTxt))
+        self.dlg.startBtn.clicked.connect(lambda : self.toolActivator(self.dlg.startTxt))
+        self.dlg.stopBtn.clicked.connect(lambda : self.toolActivator(self.dlg.stopTxt))
         self.dlg.runBtn.clicked.connect(self.runAnalysis)
 
-        #these two variables are used for holding start and stop lanlot points.
-        self.startPoint = ''
-        self.stopPoint = ''
-        self.dlg.startTxt.textChanged.connect(lambda: self.crsTransform(self.dlg.startTxt.text(), 1))
-        self.dlg.stopTxt.textChanged.connect(lambda: self.crsTransform(self.dlg.stopTxt.text(), 2))
-
-        self.dlg.setFixedSize(450,390)
         self.dlg.show()

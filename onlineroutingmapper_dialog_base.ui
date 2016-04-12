@@ -217,6 +217,31 @@ border:1px solid black</string>
      <string>YourNavigation API</string>
     </property>
    </item>
+   <item>
+    <property name="text">
+     <string>MapBox Directions API</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>GraphHopper API</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>TomTom API</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>MapQuest API</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>Open Source Routing Machine (OSRM) API</string>
+    </property>
+   </item>
   </widget>
   <widget class="QLabel" name="startLlb_2">
    <property name="geometry">
