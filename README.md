@@ -11,7 +11,7 @@ http://cbsuygulama.wordpress.com
 
 
 ###Description
-You dont need any data to calculate routes for your maps. Just point the start and stop locations. It will generate routes by using online services.
+You dont need data anymore to calculate routes for your maps. Just point the start and stop locations. It will generate routes by using online services.
 
 
 ###Features
