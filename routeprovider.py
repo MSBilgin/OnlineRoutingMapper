@@ -31,7 +31,7 @@ class RouteProvider(object):
         self.__hereBaseURL__ ='https://route.api.here.com/routing/7.2/calculateroute.json?alternatives=0&app_code=djPZyynKsbTjIUDOBcHZ2g&app_id=xWVIueSv6JL0aJ5xqTxb&departure=%s&jsonAttributes=41&language=en_US&legattributes=all&linkattributes=none,sh,ds,rn,ro,nl,pt,ns,le&maneuverattributes=all&metricSystem=imperial&mode=fastest;car;traffic:enabled;&routeattributes=none,sh,wp,sm,bb,lg,no,li,tx&transportModeType=car&waypoint0=geo!%s&waypoint1=geo!%s'
         self.__mapBoxBaseURL__ = 'https://api.tiles.mapbox.com/v4/directions/mapbox.driving/%s;%s.json?instructions=json&geometry=linestring&access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpbG10dnA3NzY3OTZ0dmtwejN2ZnUycjYifQ.1W5oTOnWXQ9R1w8u3Oo1yA'
         self.__graphHopperBaseURL__ = 'https://graphhopper.com/api/1/route?point=%s&point=%s&type=json&key=016f1b38-62f0-4a2b-88f7-dc5b743a9b56&locale=en-US&vehicle=car&weighting=fastest&elevation=false'
-        self.__tomtomBaseURL__ = 'https://api.tomtom.com/routing/1/calculateRoute/%s:%s/jsonp?key=hpygzp67548xfpk69qsfwqng&traffic=false&report=effectiveSettings&travelMode=car&instructionsType=tagged&language=en-gb'
+        self.__tomtomBaseURL__ = 'https://api.tomtom.com/routing/1/calculateRoute/%s:%s/jsonp?key=hpygzp67548xfpk69qsfwqng&traffic=false'
         self.__mapQuestBaseURL__ ='http://www.mapquest.com/alternateroutes?key=Cmjtd%7Cluur2108n1%2C7w%3Do5-gz8a&json={"locations":[{"latLng":{"lat":%s,"lng":%s}},{"latLng":{"lat":%s,"lng":%s}}],"maxRoutes":3,"timeOverage":99,"options":{"doReverseGeocode":false,"routeType":"fastest","enhancedNarrative":true,"narrativeType":"microformat","avoids":[],"conditionsAheadDistance":"200.00","generalize":0,"shapeFormat":"cmp6"}}'
         self.__osrmBaseURL__ = 'http://router.project-osrm.org/viaroute?instructions=false&alt=true&z=18&loc=%s&loc=%s'
         self.__serviceType__ = -1 #holds service type (google,here etc...)
@@ -207,10 +207,10 @@ class RouteProvider(object):
 
         elif self.__serviceType__ == 5: #tomtom JSON
             responseData = json.loads(response[9:-1])
-            coors = responseData['routes'][0]['guidance']['instructions']
+            coors = responseData['routes'][0]['legs'][0]['points']
             usefulCoorList = []
             for i in coors:
-                usefulCoorList.extend([i['point']['longitude'], i['point']['latitude']])
+                usefulCoorList.extend([i['longitude'], i['latitude']])
             return self.__coorOrganizer__(usefulCoorList)
 
         elif self.__serviceType__ == 6:  #mapQuest json
