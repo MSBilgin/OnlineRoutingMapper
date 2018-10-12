@@ -20,7 +20,7 @@ You dont need data anymore to calculate routes for your maps. Just point the sta
    
    - Shortest-Path without any data.
 
-   - Popular web services supported.
+   - Popular web services supported (HERE, YourNavigation, Graphopper, TomTom, MapQuest, Mapbox)
 
    - No need extra python packages.
    
