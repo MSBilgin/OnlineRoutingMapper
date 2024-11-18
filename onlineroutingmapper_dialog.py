@@ -24,8 +24,9 @@
 
 import os
 
-from PyQt5 import uic
-from PyQt5 import QtWidgets
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt import uic, QtGui
+from qgis.PyQt import QtWidgets
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'OnlineRoutingMapper_dialog_base.ui'))
@@ -41,3 +42,9 @@ class OnlineRoutingMapperDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        if not event.key() == Qt.Key_Escape:
+            super().keyPressEvent(event)
+
+
