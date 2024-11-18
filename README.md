@@ -38,6 +38,6 @@ You dont need data anymore to calculate routes for your maps. Just point the sta
 
   <img src="https://i.imgur.com/nM9B25f.png" />
 
-  <img src="https://lh3.googleusercontent.com/-n8a2guC06tA/VkER2Zu7StI/AAAAAAAAA0o/xivK9MYsbxU/s912-Ic42/FarkliSonuclar.png" />
+  <img src="https://i.imgur.com/Molo0LQ.png" />
 </p>
 
