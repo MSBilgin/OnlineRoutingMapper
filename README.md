@@ -35,14 +35,9 @@ You dont need data anymore to calculate routes for your maps. Just point the sta
 </p>
 
 <p align="center">
-  <img src="https://imgur.com/a/KpQnnEa" />
+
+  <img src="https://i.imgur.com/nM9B25f.png" />
+
   <img src="https://lh3.googleusercontent.com/-n8a2guC06tA/VkER2Zu7StI/AAAAAAAAA0o/xivK9MYsbxU/s912-Ic42/FarkliSonuclar.png" />
 </p>
 
-
-
-###Installation
-
-1. Download the project and unzip it.
-2. Change the plugin folder name to OnlineRoutingMapper. 
-3. Copy this folder to .qgis2\python\plugins\  
