@@ -2,12 +2,14 @@ from .here import Here
 from .openrouteservice import Openrouteservice
 from .tomtom import TomTom
 from .graphhopper import GraphHopper
+from .yandex import Yandex
 
 __PROVIDERS__ = [
     TomTom(),
     GraphHopper(),
     Openrouteservice(),
-    Here()
+    Here(),
+    Yandex()
 ]
 
 

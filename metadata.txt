@@ -5,8 +5,8 @@
 [general]
 name=Online Routing Mapper
 qgisMinimumVersion=3.0
-description=Generate routes by using online services (Openrouteservice, GraphHopper , TomTom, Here)
-version=1.0
+description=Generate routes by using online services (Openrouteservice, GraphHopper ,TomTom, Here, Yandex)
+version=1.1
 author=Mehmet Selim BILGIN, Yunus Emre ONDER
 email=mselimbilgin@yahoo.com, emre.ondr@hotmail.com
 
@@ -20,7 +20,7 @@ repository=https://github.com/MSBilgin/OnlineRoutingMapper
 
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
-# changelog=
+changelog=Yandex.Routing was added as provider.
 
 # Tags are comma separated with spaces allowed
 tags=analysis, network analysis, network, vector, webservice, web, shortest path
