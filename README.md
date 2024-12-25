@@ -27,8 +27,7 @@ You dont need data anymore to calculate routes for your maps. Just point the sta
    
  
 ###Changelog
-   - Openrouteservice, Here service API's added.
-   - UI updated.
+   - Yandex.Routing added.
 	
 
 <p class="western"><br><br>
