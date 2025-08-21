@@ -1,4 +1,4 @@
-Online Routing Mapper v1.1
+Online Routing Mapper v1.2
 ==========
 
 
@@ -27,7 +27,7 @@ You dont need data anymore to calculate routes for your maps. Just point the sta
    
  
 ###Changelog
-   - Yandex.Routing added.
+   - Atlas Routing API added.
 	
 
 <p class="western"><br><br>

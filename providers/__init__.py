@@ -3,13 +3,15 @@ from .openrouteservice import Openrouteservice
 from .tomtom import TomTom
 from .graphhopper import GraphHopper
 from .yandex import Yandex
+from .atlas import Atlas
 
 __PROVIDERS__ = [
     TomTom(),
     GraphHopper(),
     Openrouteservice(),
     Here(),
-    Yandex()
+    Yandex(),
+    Atlas()
 ]
 
 
