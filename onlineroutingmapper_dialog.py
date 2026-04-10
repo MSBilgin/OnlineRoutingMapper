@@ -29,7 +29,7 @@ from qgis.PyQt import uic, QtGui
 from qgis.PyQt import QtWidgets
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'OnlineRoutingMapper_dialog_base.ui'))
+    os.path.dirname(__file__), 'onlineroutingmapper_dialog_base.ui'))
 
 
 class OnlineRoutingMapperDialog(QtWidgets.QDialog, FORM_CLASS):
